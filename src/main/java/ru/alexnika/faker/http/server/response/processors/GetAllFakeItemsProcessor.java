@@ -1,6 +1,7 @@
-package ru.alexnika.faker.http.server.processors;
+package ru.alexnika.faker.http.server.response.processors;
 
-import ru.alexnika.faker.http.server.requestanalyzer.HttpRequestParser;
+import ru.alexnika.faker.http.server.request.HttpAccept;
+import ru.alexnika.faker.http.server.request.HttpRequest;
 import ru.alexnika.faker.http.server.exceptions.BadRequestException;
 import ru.alexnika.faker.http.server.domain.FakeItem;
 import ru.alexnika.faker.http.server.domain.FakeItemsRepository;
@@ -9,17 +10,15 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.Objects;
 
 import com.google.gson.*;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import ru.alexnika.faker.http.server.response.HttpResponse;
+import ru.alexnika.faker.http.server.response.Response;
 
 @SuppressWarnings("FieldMayBeFinal")
-public class GetAllFakeItemsProcessor implements RequestProcessor {
-    private static final Logger logger = LogManager.getLogger(GetAllFakeItemsProcessor.class.getName());
+public class GetAllFakeItemsProcessor extends Processor {
     private FakeItemsRepository fakeItemsRepository;
 
     public GetAllFakeItemsProcessor(FakeItemsRepository fakeItemsRepository) {
@@ -27,12 +26,12 @@ public class GetAllFakeItemsProcessor implements RequestProcessor {
     }
 
     @Override
-    public void execute(@NotNull HttpRequestParser request, OutputStream out) {
-        TemplateRequestPreprocessor templateRequest = new TemplateRequestPreprocessor();
+    public void execute(@NotNull HttpRequest request, OutputStream out) {
+        logger.info("GetAllFakeItems processor executed");
         int fakeItemsQuantity = fakeItemsRepository.getFakeItemsQuantity();
         int requestedFakeItemsQuantity;
         List<FakeItem> fakeItems = fakeItemsRepository.getFakeItems();
-        String jsonBody;
+        String responseBody;
         String response;
         if (request.containsParameter("quantity")) {
             try {
@@ -46,15 +45,17 @@ public class GetAllFakeItemsProcessor implements RequestProcessor {
             }
         }
         Gson gson = new Gson();
+        HttpAccept acceptType = request.getAcceptType();
+        logger.debug("acceptType: {}", acceptType);
         try {
-            jsonBody = gson.toJson(Objects.requireNonNullElse(fakeItems, "{}"));
+            responseBody = gson.toJson(fakeItems);
+            Response httpresponse;
             if (fakeItems == null || fakeItems.isEmpty()) {
-                response = templateRequest.prepareResponse(204, "No Content",
-                        "application/json", jsonBody);
+                httpresponse = HttpResponse.noContent(acceptType);
             } else {
-                response = templateRequest.prepareResponse(200, "OK",
-                        "application/json", jsonBody);
+                httpresponse = HttpResponse.ok(acceptType, responseBody);
             }
+            response = templateRequest.prepareResponse(httpresponse);
             try {
                 out.write(response.getBytes(StandardCharsets.UTF_8));
             } catch (IOException e) {

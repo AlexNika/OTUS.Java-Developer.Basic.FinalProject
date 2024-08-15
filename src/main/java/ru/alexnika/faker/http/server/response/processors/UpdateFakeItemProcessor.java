@@ -1,9 +1,10 @@
-package ru.alexnika.faker.http.server.processors;
+package ru.alexnika.faker.http.server.response.processors;
 
 import ru.alexnika.faker.http.server.domain.FakeItem;
 import ru.alexnika.faker.http.server.domain.FakeItemsRepository;
 import ru.alexnika.faker.http.server.exceptions.BadRequestException;
-import ru.alexnika.faker.http.server.requestanalyzer.HttpRequestParser;
+import ru.alexnika.faker.http.server.request.HttpAccept;
+import ru.alexnika.faker.http.server.request.HttpRequest;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -15,13 +16,12 @@ import java.util.List;
 import com.google.gson.*;
 import com.google.gson.reflect.TypeToken;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import ru.alexnika.faker.http.server.response.HttpResponse;
+import ru.alexnika.faker.http.server.response.Response;
 
 @SuppressWarnings({"FieldMayBeFinal", "FieldCanBeLocal"})
-public class UpdateFakeItemProcessor implements RequestProcessor {
-    private static final Logger logger = LogManager.getLogger(UpdateFakeItemProcessor.class.getName());
+public class UpdateFakeItemProcessor extends Processor {
     private FakeItemsRepository fakeItemsRepository;
 
     public UpdateFakeItemProcessor(FakeItemsRepository fakeItemsRepository) {
@@ -29,8 +29,7 @@ public class UpdateFakeItemProcessor implements RequestProcessor {
     }
 
     @Override
-    public void execute(@NotNull HttpRequestParser request, OutputStream out) {
-        TemplateRequestPreprocessor templateRequest = new TemplateRequestPreprocessor();
+    public void execute(@NotNull HttpRequest request, OutputStream out) {
         Type FakeItemsListType = new TypeToken<List<FakeItem>>(){}.getType();
         String requestBody = request.getBody();
         if (requestBody == null) {
@@ -42,6 +41,7 @@ public class UpdateFakeItemProcessor implements RequestProcessor {
         String response;
         String responseBody;
         Gson gson = new Gson();
+        HttpAccept acceptType = request.getAcceptType();
         try {
             if (firstSymbolOfRequestBody.equals('[')) {
                 requestedToUpdatesFakeItems = gson.fromJson(requestBody, FakeItemsListType);
@@ -60,17 +60,16 @@ public class UpdateFakeItemProcessor implements RequestProcessor {
             logger.error("Invalid format of incoming JSON object", e);
             throw new BadRequestException("Invalid format of incoming JSON object");
         }
-        response = templateRequest.prepareResponse(200, "OK",
-                "application/json", responseBody);
+        Response httpresponse = HttpResponse.ok(acceptType, responseBody);
+        response = templateRequest.prepareResponse(httpresponse);
         for (FakeItem requestedFakeItem : requestedToUpdatesFakeItems) {
             Long requestedId = checkRequestedId(requestedFakeItem);
-            logger.debug("requestedId: {}", requestedId);
             FakeItem fakeItem = fakeItemsRepository.getFakeItemById(requestedId);
-            logger.debug("fakeItem: {}", fakeItem);
             if (fakeItem == null) {
                 logger.info("FakeItemsRepository does not contain the requested id={} for the PUT method",
                         requestedId);
-                response = templateRequest.prepareResponseWithoutBody(204, "No Content");
+                httpresponse = HttpResponse.noContent(acceptType);
+                response = templateRequest.prepareResponseWithoutBody(httpresponse);
                 break;
             }
             updateFakeItem(requestedId, requestedFakeItem);

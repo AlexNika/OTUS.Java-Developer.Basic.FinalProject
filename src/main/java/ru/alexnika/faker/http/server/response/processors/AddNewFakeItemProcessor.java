@@ -1,7 +1,8 @@
-package ru.alexnika.faker.http.server.processors;
+package ru.alexnika.faker.http.server.response.processors;
 
 import ru.alexnika.faker.http.server.exceptions.BadRequestException;
-import ru.alexnika.faker.http.server.requestanalyzer.HttpRequestParser;
+import ru.alexnika.faker.http.server.request.HttpAccept;
+import ru.alexnika.faker.http.server.request.HttpRequest;
 import ru.alexnika.faker.http.server.domain.FakeItem;
 import ru.alexnika.faker.http.server.domain.FakeItemsRepository;
 
@@ -12,13 +13,12 @@ import java.util.List;
 
 import com.google.gson.*;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import ru.alexnika.faker.http.server.response.HttpResponse;
+import ru.alexnika.faker.http.server.response.Response;
 
 @SuppressWarnings("FieldMayBeFinal")
-public class AddNewFakeItemProcessor implements RequestProcessor {
-    private static final Logger logger = LogManager.getLogger(AddNewFakeItemProcessor.class.getName());
+public class AddNewFakeItemProcessor extends Processor {
     private FakeItemsRepository fakeItemsRepository;
 
     public AddNewFakeItemProcessor(FakeItemsRepository fakeItemsRepository) {
@@ -26,8 +26,8 @@ public class AddNewFakeItemProcessor implements RequestProcessor {
     }
 
     @Override
-    public void execute(@NotNull HttpRequestParser request, OutputStream out) {
-        TemplateRequestPreprocessor templateRequest = new TemplateRequestPreprocessor();
+    public void execute(@NotNull HttpRequest request, OutputStream out) {
+        logger.info("AddNewFakeItem processor executed");
         int requestedFakeItemsQuantity = 1;
         List<FakeItem> fakeItems = new java.util.ArrayList<>(List.of());
         String body = request.getBody();
@@ -50,15 +50,16 @@ public class AddNewFakeItemProcessor implements RequestProcessor {
                 fakeItems.add(fakeItemsRepository.add(gson.fromJson(body, FakeItem.class)));
             }
             String responseBody = gson.toJson(fakeItems);
-            String response = templateRequest.prepareResponse(201, "Created",
-                    "application/json", responseBody);
+            HttpAccept acceptType = request.getAcceptType();
+            Response httpresponse = HttpResponse.create(acceptType, responseBody);
+            String response = templateRequest.prepareResponse(httpresponse);
             try {
                 out.write(response.getBytes(StandardCharsets.UTF_8));
             } catch (IOException e) {
-                logger.error("I/O error occurs", e);
+                super.logger.error("I/O error occurs", e);
             }
         } catch (JsonParseException e) {
-            logger.error("Invalid format of incoming JSON object", e);
+            super.logger.error("Invalid format of incoming JSON object", e);
             throw new BadRequestException("Invalid format of incoming JSON object");
         }
     }

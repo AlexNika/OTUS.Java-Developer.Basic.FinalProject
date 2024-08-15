@@ -1,4 +1,4 @@
-package ru.alexnika.faker.http.server.requestanalyzer;
+package ru.alexnika.faker.http.server.request;
 
 import java.util.Arrays;
 import java.util.Iterator;

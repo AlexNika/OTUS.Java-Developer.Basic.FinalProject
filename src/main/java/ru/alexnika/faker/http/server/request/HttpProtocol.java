@@ -1,4 +1,4 @@
-package ru.alexnika.faker.http.server.requestanalyzer;
+package ru.alexnika.faker.http.server.request;
 
 import ru.alexnika.faker.http.server.exceptions.BadRequestException;
 
@@ -9,11 +9,11 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 public enum HttpProtocol {
-    HTTP_0_9("HTTP/0.9", 0 , 9, false),
-    HTTP_1_0("HTTP/1.0", 1 , 0, false),
-    HTTP_1_1("HTTP/1.1", 1 , 1, true),
-    HTTP_2_0("HTTP/2.0", 2 , 0, false),
-    HTTP_3_0("HTTP/3.0", 3 , 0, false);
+    HTTP_0_9("HTTP/0.9", 0, 9, false),
+    HTTP_1_0("HTTP/1.0", 1, 0, false),
+    HTTP_1_1("HTTP/1.1", 1, 1, true),
+    HTTP_2_0("HTTP/2.0", 2, 0, false),
+    HTTP_3_0("HTTP/3.0", 3, 0, false);
 
     public final String LITERAL;
     public final int MAJOR;
@@ -50,6 +50,4 @@ public enum HttpProtocol {
         }
         return bestCompatibleHttpProtocol;
     }
-
-
 }
