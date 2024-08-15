@@ -1,6 +1,6 @@
 package ru.alexnika.faker.http.server.httpserver;
 
-import ru.alexnika.faker.http.server.requestanalyzer.HttpRequestParser;
+import ru.alexnika.faker.http.server.request.HttpRequest;
 
 import java.io.IOException;
 import java.net.Socket;
@@ -33,8 +33,9 @@ public class RequestHandler implements Runnable {
                 return;
             }
             String rawRequest = new String(buffer, 0, n, StandardCharsets.US_ASCII);
-            HttpRequestParser request = new HttpRequestParser(rawRequest);
+            HttpRequest request = new HttpRequest(rawRequest, clientSocket.getOutputStream());
             request.info();
+
             dispatcher.execute(request, clientSocket.getOutputStream());
             clientSocket.close();
             logger.info("The current clientSocket: {} - closed", clientSocket.toString());

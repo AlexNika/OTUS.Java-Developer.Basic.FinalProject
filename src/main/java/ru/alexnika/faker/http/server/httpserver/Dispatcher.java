@@ -1,10 +1,13 @@
 package ru.alexnika.faker.http.server.httpserver;
 
 import ru.alexnika.faker.http.server.domain.FakeItemsRepository;
-import ru.alexnika.faker.http.server.requestanalyzer.HttpRequestParser;
+import ru.alexnika.faker.http.server.request.HttpAccept;
+import ru.alexnika.faker.http.server.request.HttpRequest;
+import ru.alexnika.faker.http.server.response.HttpResponse;
+import ru.alexnika.faker.http.server.response.Response;
 import ru.alexnika.faker.http.server.exceptions.BadRequestException;
 import ru.alexnika.faker.http.server.exceptions.DefaultErrorDto;
-import ru.alexnika.faker.http.server.processors.*;
+import ru.alexnika.faker.http.server.response.processors.*;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -41,7 +44,8 @@ public class Dispatcher {
         this.defaultInternalServerErrorProcessor = new DefaultInternalServerErrorRequestProcessor();
     }
 
-    public void execute(HttpRequestParser request, OutputStream out) throws IOException {
+    public void execute(HttpRequest request, OutputStream out) throws IOException {
+        TemplateRequestPreprocessor templateRequest = new TemplateRequestPreprocessor();
         try {
             if (!processors.containsKey(request.getRoutingKey())) {
                 defaultNotFoundRequestProcessor.execute(request, out);
@@ -51,13 +55,10 @@ public class Dispatcher {
         } catch (BadRequestException e) {
             e.printStackTrace();
             DefaultErrorDto defaultErrorDto = new DefaultErrorDto("CLIENT_DEFAULT_ERROR", e.getMessage());
-            String jsonError = new Gson().toJson(defaultErrorDto);
-            String response = "";
-            response = response +
-                    "HTTP/1.1 400 Bad Request\r\n" +
-                    "Content-Type: application/json\r\n" +
-                    "\r\n" +
-                    jsonError;
+            String responseError = new Gson().toJson(defaultErrorDto);
+            HttpAccept acceptType = request.getAcceptType();
+            Response httpresponse = HttpResponse.error400(acceptType, responseError);
+            String response = templateRequest.prepareResponse(httpresponse);
             out.write(response.getBytes(StandardCharsets.UTF_8));
         } catch (Exception e) {
             logger.error("I/O error occurs", e);

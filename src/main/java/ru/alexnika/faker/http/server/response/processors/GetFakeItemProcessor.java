@@ -1,9 +1,10 @@
-package ru.alexnika.faker.http.server.processors;
+package ru.alexnika.faker.http.server.response.processors;
 
 import ru.alexnika.faker.http.server.domain.FakeItem;
 import ru.alexnika.faker.http.server.domain.FakeItemsRepository;
 import ru.alexnika.faker.http.server.exceptions.BadRequestException;
-import ru.alexnika.faker.http.server.requestanalyzer.HttpRequestParser;
+import ru.alexnika.faker.http.server.request.HttpAccept;
+import ru.alexnika.faker.http.server.request.HttpRequest;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -11,13 +12,12 @@ import java.nio.charset.StandardCharsets;
 
 import com.google.gson.*;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import ru.alexnika.faker.http.server.response.HttpResponse;
+import ru.alexnika.faker.http.server.response.Response;
 
 @SuppressWarnings("FieldMayBeFinal")
-public class GetFakeItemProcessor implements RequestProcessor {
-    private static final Logger logger = LogManager.getLogger(GetFakeItemProcessor.class.getName());
+public class GetFakeItemProcessor extends Processor {
     private FakeItemsRepository fakeItemsRepository;
 
     public GetFakeItemProcessor(FakeItemsRepository fakeItemsRepository) {
@@ -25,8 +25,8 @@ public class GetFakeItemProcessor implements RequestProcessor {
     }
 
     @Override
-    public void execute(@NotNull HttpRequestParser request, OutputStream out) throws IOException {
-        TemplateRequestPreprocessor templateRequest = new TemplateRequestPreprocessor();
+    public void execute(@NotNull HttpRequest request, OutputStream out) throws IOException {
+        logger.info("GetFakeItem processor executed");
         FakeItem fakeItem = null;
         long fakeItemId = -1L;
         String responseBody;
@@ -41,15 +41,19 @@ public class GetFakeItemProcessor implements RequestProcessor {
             fakeItem = fakeItemsRepository.getFakeItemById(fakeItemId);
         }
         Gson gson = new Gson();
+        HttpAccept acceptType = request.getAcceptType();
         try {
+            Response httpResponse;
             if (fakeItem == null) {
                 logger.info("There is no fake item with id={}. Nothing to show.", fakeItemId);
-                response = templateRequest.prepareResponseWithoutBody(204, "No Content");
+                httpResponse = HttpResponse.noContent(acceptType);
+                response = templateRequest.prepareResponseWithoutBody(httpResponse);
             } else {
                 responseBody = gson.toJson(fakeItem);
-                response = templateRequest.prepareResponse(200, "OK",
-                        "application/json", responseBody);
+                httpResponse = HttpResponse.ok(acceptType, responseBody);
+                response = templateRequest.prepareResponse(httpResponse);
             }
+            logger.debug("response: {}", response);
             try {
                 out.write(response.getBytes(StandardCharsets.UTF_8));
             } catch (IOException e) {

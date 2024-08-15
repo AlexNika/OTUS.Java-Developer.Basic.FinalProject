@@ -1,18 +1,21 @@
-package ru.alexnika.faker.http.server.requestanalyzer;
+package ru.alexnika.faker.http.server.request;
 
-import static ru.alexnika.faker.http.server.requestanalyzer.HttpStatusCode.*;
+import static ru.alexnika.faker.http.server.response.HttpStatusCode.*;
 
 import ru.alexnika.faker.http.server.config.Config;
 import ru.alexnika.faker.http.server.exceptions.BadRequestException;
+import ru.alexnika.faker.http.server.response.HttpResponse;
+import ru.alexnika.faker.http.server.response.Response;
 
+import java.io.OutputStream;
 import java.util.*;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 @SuppressWarnings("FieldMayBeFinal")
-public class HttpRequestParser {
-    private static final Logger logger = LogManager.getLogger(HttpRequestParser.class.getName());
+public class HttpRequest {
+    private static final Logger logger = LogManager.getLogger(HttpRequest.class.getName());
     private String rawRequest;
     private StringBuilder rawRequestSB;
     private String uri;
@@ -21,21 +24,28 @@ public class HttpRequestParser {
     private Map<String, String> requestParams;
     private Map<String, String> headers;
     private String body;
+    private HttpAccept acceptType;
+    private OutputStream out;
 
     public String getRoutingKey() {
         return method + " " + uri;
     }
 
-    public HttpRequestParser(String rawRequest) {
+    public HttpRequest(String rawRequest, OutputStream outputStream) {
         this.rawRequest = rawRequest;
         this.rawRequestSB = new StringBuilder(this.rawRequest);
         this.requestParams = new HashMap<>();
         this.headers = new HashMap<>();
+        this.out = outputStream;
         this.parse();
     }
 
     public String getBody() {
         return body;
+    }
+
+    public HttpAccept getAcceptType() {
+        return acceptType;
     }
 
     public boolean containsParameter(String key) {
@@ -75,6 +85,7 @@ public class HttpRequestParser {
         }
         parseRequestLine();
         parseMessageHeader();
+        parseAcceptType();
         parseEntityBody();
     }
 
@@ -95,14 +106,18 @@ public class HttpRequestParser {
         } else if (requestLineParts.length == 3) {
             this.uri = requestLineParts[1];
             if (this.uri.length() > uriMaxLength) {
-                logger.error("{}: '{}'", CLIENT_ERROR_414_BAD_REQUEST.MESSAGE, requestLineParts[1]);
-                throw new BadRequestException(CLIENT_ERROR_414_BAD_REQUEST.STATUS_CODE +
-                        CLIENT_ERROR_414_BAD_REQUEST.MESSAGE);
+                logger.error("{}: '{}'", CLIENT_ERROR_414_URI_TOO_LONG.MESSAGE, requestLineParts[1]);
+                Response response = HttpResponse.error414(HttpAccept.ANY);
+                HttpResponse.sendResponse(response, out);
+                throw new BadRequestException(CLIENT_ERROR_414_URI_TOO_LONG.STATUS_CODE + " " +
+                        CLIENT_ERROR_414_URI_TOO_LONG.MESSAGE);
             }
             getProtocol(requestLineParts[2]);
         } else {
             logger.error("{}: '{}'", CLIENT_ERROR_400_BAD_REQUEST.MESSAGE, requestLine);
-            throw new BadRequestException(CLIENT_ERROR_400_BAD_REQUEST.STATUS_CODE +
+            Response response = HttpResponse.error404(HttpAccept.ANY);
+            HttpResponse.sendResponse(response, out);
+            throw new BadRequestException(CLIENT_ERROR_400_BAD_REQUEST.STATUS_CODE + " " +
                     CLIENT_ERROR_400_BAD_REQUEST.MESSAGE);
         }
         getRequestParams();
@@ -116,7 +131,9 @@ public class HttpRequestParser {
         String rawMessageHeader = this.rawRequestSB.substring(beginIndex, endIndex);
         if (rawMessageHeader.isEmpty()) {
             logger.error("{}: '{}'", CLIENT_ERROR_400_BAD_REQUEST.MESSAGE, rawMessageHeader);
-            throw new BadRequestException(CLIENT_ERROR_400_BAD_REQUEST.STATUS_CODE +
+            Response response = HttpResponse.error400(HttpAccept.ANY, CLIENT_ERROR_400_BAD_REQUEST.MESSAGE);
+            HttpResponse.sendResponse(response, out);
+            throw new BadRequestException(CLIENT_ERROR_400_BAD_REQUEST.STATUS_CODE + " " +
                     CLIENT_ERROR_400_BAD_REQUEST.MESSAGE);
         }
         String[] rawMessageHeaderLines = rawMessageHeader.split("\r\n");
@@ -128,6 +145,23 @@ public class HttpRequestParser {
             this.headers.put(keyValue[0], keyValue[1]);
         }
         rawRequestSB.delete(beginIndex, endIndex + 4);
+    }
+
+    private void parseAcceptType() {
+        if (this.headers.containsKey("Accept")) {
+            try {
+                logger.debug("this.headers.get(\"Accept\"): {}", this.headers.get("Accept"));
+                acceptType = HttpAccept.getBestCompatibleAcceptType(this.headers.get("Accept"));
+            } catch (BadRequestException e) {
+                logger.error("{}: '{}'", CLIENT_ERROR_406_NOT_ACCEPTABLE.MESSAGE, acceptType);
+                Response response = HttpResponse.error406(HttpAccept.ANY);
+                HttpResponse.sendResponse(response, out);
+                throw new BadRequestException(CLIENT_ERROR_406_NOT_ACCEPTABLE.STATUS_CODE +
+                        CLIENT_ERROR_406_NOT_ACCEPTABLE.MESSAGE);
+            }
+        } else {
+            acceptType = HttpAccept.ANY;
+        }
     }
 
     private void parseEntityBody() {
@@ -151,6 +185,15 @@ public class HttpRequestParser {
         String[] keyValue;
         if (!uriParts[1].contains("&")) {
             keyValue = uriParts[1].split("=");
+            if (keyValue.length != 2) {
+                logger.error("{}: '{}'", CLIENT_ERROR_400_BAD_REQUEST.MESSAGE, uri);
+                Response response = HttpResponse.error400(HttpAccept.ANY, CLIENT_ERROR_400_BAD_REQUEST.MESSAGE);
+                HttpResponse.sendResponse(response, out);
+                throw new BadRequestException(CLIENT_ERROR_400_BAD_REQUEST.STATUS_CODE + " " +
+                        CLIENT_ERROR_400_BAD_REQUEST.MESSAGE);
+
+            }
+            logger.debug("keyValue: {},{}", keyValue[0], keyValue[1]);
             this.requestParams.put(keyValue[0], keyValue[1]);
             return;
         }
@@ -166,6 +209,8 @@ public class HttpRequestParser {
             method = HttpMethod.valueOf(requestLinePart);
         } catch (BadRequestException e) {
             logger.error("{}: '{}'", CLIENT_ERROR_401_METHOD_NOT_ALLOWED.MESSAGE, requestLinePart);
+            Response response = HttpResponse.error401(HttpAccept.ANY, CLIENT_ERROR_401_METHOD_NOT_ALLOWED.MESSAGE);
+            HttpResponse.sendResponse(response, out);
             throw new BadRequestException(CLIENT_ERROR_401_METHOD_NOT_ALLOWED.STATUS_CODE +
                     CLIENT_ERROR_401_METHOD_NOT_ALLOWED.MESSAGE);
         }
@@ -176,11 +221,13 @@ public class HttpRequestParser {
             protocol = HttpProtocol.getBestCompatibleProtocol(requestLinePart);
             if (!protocol.isSUPPORTED) {
                 logger.error("{}: '{}'", SERVER_ERROR_505_HTTP_VERSION_NOT_SUPPORTED.MESSAGE, protocol.LITERAL);
+                Response response = HttpResponse.error505(HttpAccept.ANY);
+                HttpResponse.sendResponse(response, out);
                 throw new BadRequestException(SERVER_ERROR_505_HTTP_VERSION_NOT_SUPPORTED.STATUS_CODE +
                         SERVER_ERROR_505_HTTP_VERSION_NOT_SUPPORTED.MESSAGE);
             }
         } catch (BadRequestException e) {
-            logger.error("Best compatible HTTP protocol version not found");
+            logger.error("Best compatible HTTP protocol version not found", e);
             throw new BadRequestException("Best compatible HTTP protocol version not found");
         }
     }
