@@ -37,9 +37,9 @@ public class HttpResponse {
                 CLIENT_ERROR_400_BAD_REQUEST.MESSAGE, acceptType, responseBody);
     }
 
-    public static @NotNull Response error401(HttpAccept acceptType, String responseBody) {
-        return new Response(CLIENT_ERROR_401_METHOD_NOT_ALLOWED.STATUS_CODE,
-                CLIENT_ERROR_401_METHOD_NOT_ALLOWED.MESSAGE, acceptType, responseBody);
+    public static @NotNull Response error405(HttpAccept acceptType, String responseBody) {
+        return new Response(CLIENT_ERROR_405_METHOD_NOT_ALLOWED.STATUS_CODE,
+                CLIENT_ERROR_405_METHOD_NOT_ALLOWED.MESSAGE, acceptType, responseBody);
     }
 
     public static @NotNull Response error404(HttpAccept acceptType) {

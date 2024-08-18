@@ -1,28 +1,25 @@
 package ru.alexnika.faker.http.server.response.processors;
 
+import ru.alexnika.faker.http.server.domain.FakeItem;
+import ru.alexnika.faker.http.server.domain.FakeItemsRepository;
 import ru.alexnika.faker.http.server.exceptions.BadRequestException;
 import ru.alexnika.faker.http.server.request.HttpAccept;
 import ru.alexnika.faker.http.server.request.HttpRequest;
-import ru.alexnika.faker.http.server.domain.FakeItem;
-import ru.alexnika.faker.http.server.domain.FakeItemsRepository;
+import ru.alexnika.faker.http.server.response.HttpResponse;
+import ru.alexnika.faker.http.server.response.Response;
 
-import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import com.google.gson.*;
 
 import org.jetbrains.annotations.NotNull;
-import ru.alexnika.faker.http.server.response.HttpResponse;
-import ru.alexnika.faker.http.server.response.Response;
 
 @SuppressWarnings("FieldMayBeFinal")
 public class AddNewFakeItemProcessor extends Processor {
-    private FakeItemsRepository fakeItemsRepository;
 
     public AddNewFakeItemProcessor(FakeItemsRepository fakeItemsRepository) {
-        this.fakeItemsRepository = fakeItemsRepository;
+        super(fakeItemsRepository);
     }
 
     @Override
@@ -53,11 +50,7 @@ public class AddNewFakeItemProcessor extends Processor {
             HttpAccept acceptType = request.getAcceptType();
             Response httpresponse = HttpResponse.create(acceptType, responseBody);
             String response = templateRequest.prepareResponse(httpresponse);
-            try {
-                out.write(response.getBytes(StandardCharsets.UTF_8));
-            } catch (IOException e) {
-                super.logger.error("I/O error occurs", e);
-            }
+            send(out, response);
         } catch (JsonParseException e) {
             super.logger.error("Invalid format of incoming JSON object", e);
             throw new BadRequestException("Invalid format of incoming JSON object");

@@ -1,24 +1,21 @@
 package ru.alexnika.faker.http.server.response.processors;
 
-import ru.alexnika.faker.http.server.exceptions.BadRequestException;
 import ru.alexnika.faker.http.server.domain.FakeItemsRepository;
+import ru.alexnika.faker.http.server.exceptions.BadRequestException;
 import ru.alexnika.faker.http.server.request.HttpAccept;
 import ru.alexnika.faker.http.server.request.HttpRequest;
-
-import java.io.IOException;
-import java.io.OutputStream;
-import java.nio.charset.StandardCharsets;
-
-import org.jetbrains.annotations.NotNull;
 import ru.alexnika.faker.http.server.response.HttpResponse;
 import ru.alexnika.faker.http.server.response.Response;
 
+import java.io.OutputStream;
+
+import org.jetbrains.annotations.NotNull;
+
 @SuppressWarnings({"FieldMayBeFinal", "FieldCanBeLocal"})
 public class DeleteItemProcessor extends Processor {
-    private FakeItemsRepository fakeItemsRepository;
 
     public DeleteItemProcessor(FakeItemsRepository fakeItemsRepository) {
-        this.fakeItemsRepository = fakeItemsRepository;
+        super(fakeItemsRepository);
     }
 
     @Override
@@ -39,17 +36,13 @@ public class DeleteItemProcessor extends Processor {
         HttpAccept acceptType = request.getAcceptType();
         Response httpresponse;
         if (fakeItemsRepository.delete(deleteId)) {
-            httpresponse = HttpResponse.ok(acceptType);
+            httpresponse = HttpResponse.noContent(acceptType);
             logger.info("The fake item with id={} has been deleted successfully", deleteId);
         } else {
-            httpresponse = HttpResponse.noContent(acceptType);
+            httpresponse = HttpResponse.error404(acceptType);
             logger.info("There is no fake item with id={}. Nothing to delete.", deleteId);
         }
         response = templateRequest.prepareResponseWithoutBody(httpresponse);
-        try {
-            out.write(response.getBytes(StandardCharsets.UTF_8));
-        } catch (IOException e) {
-            logger.error("I/O error occurs", e);
-        }
+        send(out, response);
     }
 }

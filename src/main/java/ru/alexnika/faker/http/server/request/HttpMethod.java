@@ -5,18 +5,25 @@ import java.util.Iterator;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 
 public enum HttpMethod {
-    GET,
-    HEAD,
-    POST,
-    PUT,
-    DELETE,
-    OPTIONS;
+    GET(true),
+    HEAD(true),
+    POST(true),
+    PUT(true),
+    PATCH(false),
+    DELETE(true),
+    OPTIONS(true);
 
     public static final int MAX_LENGTH;
+    public final boolean isALLOWED;
     private static final Iterator<HttpMethod> httpMethodValues = Arrays.stream(values()).iterator();
     private static final Logger logger = LogManager.getLogger(HttpMethod.class.getName());
+
+    HttpMethod(boolean isALLOWED) {
+        this.isALLOWED = isALLOWED;
+    }
 
     static {
         int tempMaxLength = -1;
@@ -29,7 +36,7 @@ public enum HttpMethod {
         logger.debug("MAX_LENGTH of methods name: {}", MAX_LENGTH);
     }
 
-    public static String getAllMethods() {
+    public static @NotNull String getAllMethods() {
         StringBuilder methodsSB = new StringBuilder();
         int count = 0;
         while(httpMethodValues.hasNext()) {

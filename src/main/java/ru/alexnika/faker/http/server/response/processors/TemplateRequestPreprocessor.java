@@ -4,9 +4,6 @@ import org.jetbrains.annotations.NotNull;
 import ru.alexnika.faker.http.server.response.Response;
 
 public class TemplateRequestPreprocessor {
-    private final String CRLF = System.lineSeparator();
-//    TODO переделать на lineSeparator и сделать констурктор ответа сервера http response
-//    TODO также сделать vararg с передачей в метод любого кол-ва параметров
 
     public String prepareResponse(@NotNull Response response) {
         String responseTemplate = """

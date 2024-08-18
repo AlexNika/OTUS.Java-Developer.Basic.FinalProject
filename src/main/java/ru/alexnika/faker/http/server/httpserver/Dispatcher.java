@@ -8,10 +8,10 @@ import ru.alexnika.faker.http.server.response.Response;
 import ru.alexnika.faker.http.server.exceptions.BadRequestException;
 import ru.alexnika.faker.http.server.exceptions.DefaultErrorDto;
 import ru.alexnika.faker.http.server.response.processors.*;
+import ru.alexnika.faker.http.server.statistics.processors.*;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -31,6 +31,7 @@ public class Dispatcher {
     public Dispatcher() {
         this.fakeItemsRepository = new FakeItemsRepository();
         this.processors = new HashMap<>();
+        this.processors.put("", new Processor(fakeItemsRepository));
         this.processors.put("OPTIONS /", new OptionsProcessor());
         this.processors.put("GET /", new HomePageRequestProcessor());
         this.processors.put("GET /import.this", new FileRequestProcessor());
@@ -39,6 +40,10 @@ public class Dispatcher {
         this.processors.put("POST /fakeitems", new AddNewFakeItemProcessor(fakeItemsRepository));
         this.processors.put("PUT /fakeitems", new UpdateFakeItemProcessor(fakeItemsRepository));
         this.processors.put("DELETE /fakeitems", new DeleteItemProcessor(fakeItemsRepository));
+
+        this.processors.put("GET /statistics", new GetAllStatisticsProcessor());
+        this.processors.put("DELETE /statistics", new DeleteAllStatisticsProcessor());
+        this.processors.put("PUT /statistics", new UpdateStatisticsProcessor());
 
         this.defaultNotFoundRequestProcessor = new DefaultNotFoundRequestProcessor();
         this.defaultInternalServerErrorProcessor = new DefaultInternalServerErrorRequestProcessor();
@@ -59,7 +64,7 @@ public class Dispatcher {
             HttpAccept acceptType = request.getAcceptType();
             Response httpresponse = HttpResponse.error400(acceptType, responseError);
             String response = templateRequest.prepareResponse(httpresponse);
-            out.write(response.getBytes(StandardCharsets.UTF_8));
+            Processor.send(out, response);
         } catch (Exception e) {
             logger.error("I/O error occurs", e);
             defaultInternalServerErrorProcessor.execute(request, out);

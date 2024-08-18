@@ -9,6 +9,8 @@ import java.util.concurrent.*;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import ru.alexnika.faker.http.server.exceptions.NoDBConfigException;
+import ru.alexnika.faker.http.server.statistics.StatisticsServiceJdbc;
 
 public class HttpServer {
     private static final Logger logger = LogManager.getLogger(HttpServer.class.getName());
@@ -28,6 +30,7 @@ public class HttpServer {
         try (ServerSocket serverSocket = new ServerSocket(this.serverPort, this.serverBacklog, this.serverIpAddress)) {
             logger.info("The HTTP server started and listening for connection by address: {}:{}",
                     this.serverIpAddress, this.serverPort);
+            StatisticsServiceJdbc.dbInit();
             try {
                 Dispatcher dispatcher = new Dispatcher();
                 while (serverSocket.isBound() && !serverSocket.isClosed()) {
@@ -38,8 +41,8 @@ public class HttpServer {
             } catch (IOException | RejectedExecutionException e) {
                 logger.error(e);
             }
-        } catch (IOException e) {
-            logger.error("Problem with setting server socket", e);
+        } catch (IOException | NoDBConfigException e) {
+            logger.error("Problem with starting the FAKER server", e);
         }
     }
 }

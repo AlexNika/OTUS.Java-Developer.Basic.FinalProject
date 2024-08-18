@@ -19,13 +19,16 @@ public class HttpRequest {
     private String rawRequest;
     private StringBuilder rawRequestSB;
     private String uri;
+    private String originalUri;
     private HttpMethod method;
     private HttpProtocol protocol;
     private Map<String, String> requestParams;
     private Map<String, String> headers;
     private String body;
     private HttpAccept acceptType;
+    private String contentType;
     private OutputStream out;
+    private boolean requestStatus = true;
 
     public String getRoutingKey() {
         return method + " " + uri;
@@ -41,37 +44,61 @@ public class HttpRequest {
     }
 
     public String getBody() {
-        return body;
+        return this.body;
     }
 
     public HttpAccept getAcceptType() {
-        return acceptType;
+        return this.acceptType;
+    }
+
+    public String getContentType() {
+        return this.requestParams.get("Content-Type");
     }
 
     public boolean containsParameter(String key) {
-        return requestParams.containsKey(key);
+        return this.requestParams.containsKey(key);
     }
 
     public String getParameter(String key) {
-        return requestParams.get(key);
+        return this.requestParams.get(key);
+    }
+
+    public String getOriginalUri() {
+        return this.originalUri;
+    }
+
+    public HttpProtocol getProtocol() {
+        return this.protocol;
+    }
+
+    public HttpMethod getMethod() {
+        return this.method;
+    }
+
+    public Map<String, String> getHeaders() {
+        return this.headers;
+    }
+
+    public boolean isRequestStatus() {
+        return requestStatus;
     }
 
     public void info() {
-        logger.info("uri: {}", uri);
-        logger.info("http method: {}", method);
-        logger.info("http protocol: {}", protocol);
-        if (!(body == null)) {
-            logger.info("body: {}", body);
+        logger.info("uri: {}", this.uri);
+        logger.info("http method: {}", this.method);
+        logger.info("http protocol: {}", this.protocol);
+        if (!(this.body == null)) {
+            logger.info("body: {}", this.body);
         } else {
             logger.info("body: null");
         }
-        if (!(requestParams == null) && !requestParams.isEmpty()) {
-            for (Map.Entry<String, String> entry : requestParams.entrySet()) {
+        if (!(this.requestParams == null) && !this.requestParams.isEmpty()) {
+            for (Map.Entry<String, String> entry : this.requestParams.entrySet()) {
                 logger.info("uri parameters: {}: {}", entry.getKey(), entry.getValue());
             }
         }
-        if (!(headers == null) && !headers.isEmpty()) {
-            for (Map.Entry<String, String> entry : headers.entrySet()) {
+        if (!(this.headers == null) && !this.headers.isEmpty()) {
+            for (Map.Entry<String, String> entry : this.headers.entrySet()) {
                 logger.info("headers: {}: {}", entry.getKey(), entry.getValue());
             }
         }
@@ -106,12 +133,12 @@ public class HttpRequest {
         } else if (requestLineParts.length == 3) {
             this.uri = requestLineParts[1];
             if (this.uri.length() > uriMaxLength) {
+                requestStatus = false;
                 logger.error("{}: '{}'", CLIENT_ERROR_414_URI_TOO_LONG.MESSAGE, requestLineParts[1]);
                 Response response = HttpResponse.error414(HttpAccept.ANY);
                 HttpResponse.sendResponse(response, out);
-                throw new BadRequestException(CLIENT_ERROR_414_URI_TOO_LONG.STATUS_CODE + " " +
-                        CLIENT_ERROR_414_URI_TOO_LONG.MESSAGE);
             }
+            this.originalUri = this.uri;
             getProtocol(requestLineParts[2]);
         } else {
             logger.error("{}: '{}'", CLIENT_ERROR_400_BAD_REQUEST.MESSAGE, requestLine);
@@ -121,7 +148,7 @@ public class HttpRequest {
                     CLIENT_ERROR_400_BAD_REQUEST.MESSAGE);
         }
         getRequestParams();
-        rawRequestSB.delete(beginIndex, endIndex);
+        this.rawRequestSB.delete(beginIndex, endIndex);
     }
 
     private void parseMessageHeader() {
@@ -130,11 +157,10 @@ public class HttpRequest {
         int endIndex = this.rawRequestSB.indexOf("\r\n\r\n");
         String rawMessageHeader = this.rawRequestSB.substring(beginIndex, endIndex);
         if (rawMessageHeader.isEmpty()) {
+            requestStatus = false;
             logger.error("{}: '{}'", CLIENT_ERROR_400_BAD_REQUEST.MESSAGE, rawMessageHeader);
             Response response = HttpResponse.error400(HttpAccept.ANY, CLIENT_ERROR_400_BAD_REQUEST.MESSAGE);
             HttpResponse.sendResponse(response, out);
-            throw new BadRequestException(CLIENT_ERROR_400_BAD_REQUEST.STATUS_CODE + " " +
-                    CLIENT_ERROR_400_BAD_REQUEST.MESSAGE);
         }
         String[] rawMessageHeaderLines = rawMessageHeader.split("\r\n");
         for (String o : rawMessageHeaderLines) {
@@ -153,6 +179,7 @@ public class HttpRequest {
                 logger.debug("this.headers.get(\"Accept\"): {}", this.headers.get("Accept"));
                 acceptType = HttpAccept.getBestCompatibleAcceptType(this.headers.get("Accept"));
             } catch (BadRequestException e) {
+                requestStatus = false;
                 logger.error("{}: '{}'", CLIENT_ERROR_406_NOT_ACCEPTABLE.MESSAGE, acceptType);
                 Response response = HttpResponse.error406(HttpAccept.ANY);
                 HttpResponse.sendResponse(response, out);
@@ -186,12 +213,10 @@ public class HttpRequest {
         if (!uriParts[1].contains("&")) {
             keyValue = uriParts[1].split("=");
             if (keyValue.length != 2) {
+                requestStatus = false;
                 logger.error("{}: '{}'", CLIENT_ERROR_400_BAD_REQUEST.MESSAGE, uri);
                 Response response = HttpResponse.error400(HttpAccept.ANY, CLIENT_ERROR_400_BAD_REQUEST.MESSAGE);
                 HttpResponse.sendResponse(response, out);
-                throw new BadRequestException(CLIENT_ERROR_400_BAD_REQUEST.STATUS_CODE + " " +
-                        CLIENT_ERROR_400_BAD_REQUEST.MESSAGE);
-
             }
             logger.debug("keyValue: {},{}", keyValue[0], keyValue[1]);
             this.requestParams.put(keyValue[0], keyValue[1]);
@@ -207,12 +232,15 @@ public class HttpRequest {
     private void getMethod(String requestLinePart) {
         try {
             method = HttpMethod.valueOf(requestLinePart);
+            if (!method.isALLOWED) {
+                requestStatus = false;
+                Response response = HttpResponse.error405(HttpAccept.ANY, CLIENT_ERROR_405_METHOD_NOT_ALLOWED.MESSAGE);
+                HttpResponse.sendResponse(response, out);
+            }
         } catch (BadRequestException e) {
-            logger.error("{}: '{}'", CLIENT_ERROR_401_METHOD_NOT_ALLOWED.MESSAGE, requestLinePart);
-            Response response = HttpResponse.error401(HttpAccept.ANY, CLIENT_ERROR_401_METHOD_NOT_ALLOWED.MESSAGE);
-            HttpResponse.sendResponse(response, out);
-            throw new BadRequestException(CLIENT_ERROR_401_METHOD_NOT_ALLOWED.STATUS_CODE +
-                    CLIENT_ERROR_401_METHOD_NOT_ALLOWED.MESSAGE);
+            logger.error("{}: '{}'", SERVER_ERROR_501_NOT_IMPLEMENTED.MESSAGE, requestLinePart);
+            throw new BadRequestException(SERVER_ERROR_501_NOT_IMPLEMENTED.STATUS_CODE + " " +
+                    SERVER_ERROR_501_NOT_IMPLEMENTED.MESSAGE);
         }
     }
 
@@ -220,15 +248,15 @@ public class HttpRequest {
         try {
             protocol = HttpProtocol.getBestCompatibleProtocol(requestLinePart);
             if (!protocol.isSUPPORTED) {
+                requestStatus = false;
                 logger.error("{}: '{}'", SERVER_ERROR_505_HTTP_VERSION_NOT_SUPPORTED.MESSAGE, protocol.LITERAL);
                 Response response = HttpResponse.error505(HttpAccept.ANY);
                 HttpResponse.sendResponse(response, out);
-                throw new BadRequestException(SERVER_ERROR_505_HTTP_VERSION_NOT_SUPPORTED.STATUS_CODE +
-                        SERVER_ERROR_505_HTTP_VERSION_NOT_SUPPORTED.MESSAGE);
             }
         } catch (BadRequestException e) {
             logger.error("Best compatible HTTP protocol version not found", e);
-            throw new BadRequestException("Best compatible HTTP protocol version not found");
+            throw new BadRequestException(SERVER_ERROR_505_HTTP_VERSION_NOT_SUPPORTED.STATUS_CODE + " " +
+                    SERVER_ERROR_505_HTTP_VERSION_NOT_SUPPORTED.MESSAGE);
         }
     }
 

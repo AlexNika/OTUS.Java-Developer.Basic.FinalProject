@@ -7,7 +7,6 @@ import ru.alexnika.faker.http.server.response.Response;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -25,7 +24,7 @@ public class FileRequestProcessor extends Processor {
         } catch (IOException e) {
             logger.warn("Requested file not found");
         }
-        String response = "";
+        String response;
         HttpAccept acceptType = request.getAcceptType();
         Response httpresponse;
         if (fileContent != null) {
@@ -34,6 +33,6 @@ public class FileRequestProcessor extends Processor {
             httpresponse = HttpResponse.error404(acceptType);
         }
         response = templateRequest.prepareResponse(httpresponse);
-        out.write(response.getBytes(StandardCharsets.UTF_8));
+        send(out, response);
     }
 }

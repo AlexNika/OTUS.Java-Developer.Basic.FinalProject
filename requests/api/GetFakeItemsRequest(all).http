@@ -1,0 +1,3 @@
+GET {{uri}}/fakeitems
+Accept: application/json
+Content-Type: application/json

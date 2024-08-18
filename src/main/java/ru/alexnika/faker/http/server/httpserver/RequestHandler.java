@@ -8,6 +8,8 @@ import java.nio.charset.StandardCharsets;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import ru.alexnika.faker.http.server.statistics.Statistics;
+import ru.alexnika.faker.http.server.statistics.StatisticsServiceJdbc;
 
 @SuppressWarnings("FieldMayBeFinal")
 public class RequestHandler implements Runnable {
@@ -35,11 +37,14 @@ public class RequestHandler implements Runnable {
             String rawRequest = new String(buffer, 0, n, StandardCharsets.US_ASCII);
             HttpRequest request = new HttpRequest(rawRequest, clientSocket.getOutputStream());
             request.info();
-
-            dispatcher.execute(request, clientSocket.getOutputStream());
+            Statistics statistics = new Statistics(request, clientSocket);
+            if (request.isRequestStatus()) {
+                StatisticsServiceJdbc.insert(statistics);
+                dispatcher.execute(request, clientSocket.getOutputStream());
+            }
             clientSocket.close();
             logger.info("The current clientSocket: {} - closed", clientSocket.toString());
-        } catch (IOException e) {
+        } catch (IOException | ClassNotFoundException e) {
             logger.error("I/O error occurs", e);
         }
     }
