@@ -3,13 +3,13 @@ package ru.alexnika.faker.http.server.response.processors;
 import ru.alexnika.faker.http.server.domain.FakeItem;
 import ru.alexnika.faker.http.server.domain.FakeItemsRepository;
 import ru.alexnika.faker.http.server.exceptions.BadRequestException;
+import ru.alexnika.faker.http.server.response.HttpResponse;
+import ru.alexnika.faker.http.server.response.Response;
 import ru.alexnika.faker.http.server.request.HttpAccept;
 import ru.alexnika.faker.http.server.request.HttpRequest;
 
-import java.io.IOException;
 import java.io.OutputStream;
 import java.lang.reflect.Type;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -17,15 +17,12 @@ import com.google.gson.*;
 import com.google.gson.reflect.TypeToken;
 
 import org.jetbrains.annotations.NotNull;
-import ru.alexnika.faker.http.server.response.HttpResponse;
-import ru.alexnika.faker.http.server.response.Response;
 
 @SuppressWarnings({"FieldMayBeFinal", "FieldCanBeLocal"})
 public class UpdateFakeItemProcessor extends Processor {
-    private FakeItemsRepository fakeItemsRepository;
 
     public UpdateFakeItemProcessor(FakeItemsRepository fakeItemsRepository) {
-        this.fakeItemsRepository = fakeItemsRepository;
+        super(fakeItemsRepository);
     }
 
     @Override
@@ -45,12 +42,10 @@ public class UpdateFakeItemProcessor extends Processor {
         try {
             if (firstSymbolOfRequestBody.equals('[')) {
                 requestedToUpdatesFakeItems = gson.fromJson(requestBody, FakeItemsListType);
-                logger.debug("requestedToUpdatesFakeItems: {}", requestedToUpdatesFakeItems.toString());
                 responseBody = gson.toJson(requestedToUpdatesFakeItems);
             } else if (firstSymbolOfRequestBody.equals('{')) {
                 FakeItem requestedToUpdatesFakeItem = gson.fromJson(requestBody, FakeItem.class);
                 requestedToUpdatesFakeItems.add(requestedToUpdatesFakeItem);
-                logger.debug("requestedToUpdatesFakeItem: {}", requestedToUpdatesFakeItem.toString());
                 responseBody = gson.toJson(requestedToUpdatesFakeItem);
             } else {
                 throw new JsonSyntaxException("Invalid format of incoming JSON object.\n" +
@@ -66,7 +61,7 @@ public class UpdateFakeItemProcessor extends Processor {
             Long requestedId = checkRequestedId(requestedFakeItem);
             FakeItem fakeItem = fakeItemsRepository.getFakeItemById(requestedId);
             if (fakeItem == null) {
-                logger.info("FakeItemsRepository does not contain the requested id={} for the PUT method",
+                logger.info("FakeItemsRepository does not contain the requested (id={}) for the PUT method",
                         requestedId);
                 httpresponse = HttpResponse.noContent(acceptType);
                 response = templateRequest.prepareResponseWithoutBody(httpresponse);
@@ -74,11 +69,7 @@ public class UpdateFakeItemProcessor extends Processor {
             }
             updateFakeItem(requestedId, requestedFakeItem);
         }
-        try {
-            out.write(response.getBytes(StandardCharsets.UTF_8));
-        } catch (IOException e) {
-            logger.error("I/O error occurs", e);
-        }
+        send(out, response);
     }
 
     private @NotNull Long checkRequestedId(@NotNull FakeItem requestedFakeItem) {

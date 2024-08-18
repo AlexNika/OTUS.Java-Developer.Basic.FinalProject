@@ -3,8 +3,8 @@ package ru.alexnika.faker.http.server.response;
 public enum HttpStatusCode {
 
     CLIENT_ERROR_400_BAD_REQUEST(400, "Bad Request"),
-    CLIENT_ERROR_401_METHOD_NOT_ALLOWED(401, "Method Not Allowed"),
     CLIENT_ERROR_404_NOT_FOUND(404, "Page Not Found"),
+    CLIENT_ERROR_405_METHOD_NOT_ALLOWED(405, "Method Not Allowed"),
     CLIENT_ERROR_406_NOT_ACCEPTABLE(406, "Not Acceptable"),
     CLIENT_ERROR_414_URI_TOO_LONG(414, "URI Too Long"),
 

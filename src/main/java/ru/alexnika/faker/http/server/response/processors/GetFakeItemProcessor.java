@@ -5,27 +5,24 @@ import ru.alexnika.faker.http.server.domain.FakeItemsRepository;
 import ru.alexnika.faker.http.server.exceptions.BadRequestException;
 import ru.alexnika.faker.http.server.request.HttpAccept;
 import ru.alexnika.faker.http.server.request.HttpRequest;
+import ru.alexnika.faker.http.server.response.HttpResponse;
+import ru.alexnika.faker.http.server.response.Response;
 
-import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.charset.StandardCharsets;
 
 import com.google.gson.*;
 
 import org.jetbrains.annotations.NotNull;
-import ru.alexnika.faker.http.server.response.HttpResponse;
-import ru.alexnika.faker.http.server.response.Response;
 
 @SuppressWarnings("FieldMayBeFinal")
 public class GetFakeItemProcessor extends Processor {
-    private FakeItemsRepository fakeItemsRepository;
 
     public GetFakeItemProcessor(FakeItemsRepository fakeItemsRepository) {
-        this.fakeItemsRepository = fakeItemsRepository;
+        super(fakeItemsRepository);
     }
 
     @Override
-    public void execute(@NotNull HttpRequest request, OutputStream out) throws IOException {
+    public void execute(@NotNull HttpRequest request, OutputStream out) {
         logger.info("GetFakeItem processor executed");
         FakeItem fakeItem = null;
         long fakeItemId = -1L;
@@ -54,11 +51,7 @@ public class GetFakeItemProcessor extends Processor {
                 response = templateRequest.prepareResponse(httpResponse);
             }
             logger.debug("response: {}", response);
-            try {
-                out.write(response.getBytes(StandardCharsets.UTF_8));
-            } catch (IOException e) {
-                logger.error("I/O error occurs", e);
-            }
+            send(out, response);
         } catch (JsonParseException e) {
             logger.error("Invalid format of incoming JSON object", e);
             throw new BadRequestException("Invalid format of incoming JSON object");

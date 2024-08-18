@@ -5,9 +5,6 @@ import ru.alexnika.faker.http.server.exceptions.BadRequestException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 public enum HttpProtocol {
     HTTP_0_9("HTTP/0.9", 0, 9, false),
     HTTP_1_0("HTTP/1.0", 1, 0, false),
@@ -19,7 +16,6 @@ public enum HttpProtocol {
     public final int MAJOR;
     public final int MINOR;
     public final boolean isSUPPORTED;
-    private static final Logger logger = LogManager.getLogger(HttpProtocol.class.getName());
     private static final Pattern httpVersionRegexPattern = Pattern.compile("^HTTP/(?<major>\\d+).(?<minor>\\d+)");
 
     HttpProtocol(String LITERAL, int MAJOR, int MINOR, boolean isSUPPORTED) {
