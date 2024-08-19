@@ -36,10 +36,10 @@ public class DeleteItemProcessor extends Processor {
         HttpAccept acceptType = request.getAcceptType();
         Response httpresponse;
         if (fakeItemsRepository.delete(deleteId)) {
-            httpresponse = HttpResponse.noContent(acceptType);
+            httpresponse = HttpResponse.ok(acceptType);
             logger.info("The fake item with id={} has been deleted successfully", deleteId);
         } else {
-            httpresponse = HttpResponse.error404(acceptType);
+            httpresponse = HttpResponse.noContent(acceptType);
             logger.info("There is no fake item with id={}. Nothing to delete.", deleteId);
         }
         response = templateRequest.prepareResponseWithoutBody(httpresponse);

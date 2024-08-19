@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Курсовой проект "FAKE DATA GENERATOR"</title>
+    <style>
+        p { text-indent: 25px; }
+        h4 { text-indent: 50px; }
+    </style>
+</head>
+<body>
+<div>
+    <h1>Курсовой проект "FAKE DATA GENERATOR HTTP SERVER"</h1>
+    <h2 style="text-indent: 50px">Курс OTUS Java developer basic</h2>
+    <h3 style="text-indent: 50px">Студент: Александр Николаев</h3>
+    <hr style="width:60%; margin-left:0;">
+</div>
+<div style="line-height:0.7">
+    <h2>1. Описание проекта</h2>
+    <p>Данный проект - серверное Java Core приложение.</p>
+    <p>Приложение генерирует поддельные (фейковые) данные и отдает их по API.</p>
+    <p>В качестве фейковых данных взяты следующие сущности:</p>
+    <ul style="line-height:1">
+        <li>First name</li>
+        <li>Last name</li>
+        <li>Address</li>
+        <li>Job position</li>
+        <li>Hobby</li>
+    </ul>
+    <p>Фейковые данные генерируются на лету, по запросу.</p>
+    <p>Факт каждого запроса записывается в базу данных, будь то он ошибочный или успешный.</p>
+</div>
+<div style="line-height:0.7">
+    <h2>2. Использование приложения</h2>
+    <p>API проекта разбито на 2 части:</p>
+    <ul style="line-height:1">
+        <li>API фейковых данных</li>
+        <li>API статистики</li>
+    </ul>
+    <p><i>Все тестовые API запросы расположены в папке проекта requests в корне проекта.</i></p>
+</div>
+<br>
+<div style="line-height:0.7">
+    <h3>2.1 API фейковых данных</h3>
+    <p><b>GET {{url}}/</b> - запрос возвращает в теле ответа файл <b>index.html</b> (данный файл).</p>
+    <hr style="width:60%; margin-left:0;">
+    <p><b>GET {{url}}/import.this</b> - запрос возвращает в теле ответа файл <b>import.this</b>.</p>
+    <hr style="width:60%; margin-left:0;">
+    <p><b>GET {{url}}/fakeitems</b> - запрос возвращает сгенерированные фейковые данные. Начальное количество генерации - 10.</p>
+    <hr style="width:60%; margin-left:0;">
+    <p><b>GET {{url}}/fakeitems?quantity=number</b> - запрос возвращает сгенерированные фейковые данные.</p>
+    <p>number - число записей фейковых данных с начала, которые нужно вывести. Если данный меньше, чем number, выводятся все данные.</p>
+    <hr style="width:60%; margin-left:0;">
+    <p><b>GET {{url}}/fakeitem?id=number</b> - запрос возвращает одну запись сгенерированных фейковых данных.</p>
+    <p>number - id записи в репозитории</p>
+    <hr style="width:60%; margin-left:0;">
+    <p><b>POST {{url}}/fakeitems</b> - запрос создает новую фейковую запись и добавляет ее в репозиторий.</p>
+    <p>Тело запроса должно быть заполнено. В теле может быть как одна запись, так и несколько.</p>
+    <hr style="width:60%; margin-left:0;">
+    <p><b>POST {{url}}/fakeitems?quantity=number</b> - запрос создает новую фейковую запись. Тело запроса может быть пустым.</p>
+    <p>number - количество новых фейковых данных, которое необходимо сгенерировать и добавить в репозиторий</p>
+    <hr style="width:60%; margin-left:0;">
+    <p><b>PUT {{url}}/fakeitems</b> - запрос изменяет фейковую запись. Тело запроса должно быть заполнено.</p>
+    <p>В теле может быть как одна запись, так и несколько.</p>
+    <hr style="width:60%; margin-left:0;">
+    <p><b>DELETE {{url}}/fakeitems?id=number</b> - удаляет фейковую запись из репозитория</p>
+    <p>number - id записи в репозитории</p>
+    <hr style="width:60%; margin-left:0;">
+    <p><b>OPTIONS {{url}}</b> - запрос возвращает заголовок, в котором перечислены разрешенные методы.</p>
+</div>
+<br>
+<div style="line-height:0.7">
+    <h3>2.2 API статистики</h3>
+    <p><b>GET {{url}}/statistics</b> - запрос возвращает все записи статистики из базы данных</p>
+    <hr style="width:60%; margin-left:0;">
+    <p><b>GET {{url}}/statistics?method=word</b> - запрос возвращает записи статистики из базы данных, отфильтрованные по методу.</p>
+    <p>word - метод в заголовке запроса, например GET</p>
+    <hr style="width:60%; margin-left:0;">
+    <p><b>GET {{url}}/statistics?id=number</b> - запрос возвращает запись статистики из базы данных, отфильтрованную по id.</p>
+    <p>number - id записи статистики в базе данных</p>
+    <hr style="width:60%; margin-left:0;">
+    <p><b>PUT {{url}}/statistics</b> - запрос изменяет поле 'billed' фейковой записи. Все остальные данные изменить нельзя.</p>
+    <p>Тело запроса должно быть заполнено. В теле может быть как одна запись, так и несколько.</p>
+    <hr style="width:60%; margin-left:0;">
+    <p><b>DELETE {{url}}/statistics?id=number</b> - удаляет запись статистики из базы данных</p>
+    <p>number - id записи в репозитории</p>
+</div>
+</body>
+</html>

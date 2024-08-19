@@ -1,0 +1,14 @@
+### PUT request to HTTP fake server. Update one fake item with id=11.
+// @no-log
+PUT {{url}}/fakeitems
+Accept: application/json
+Content-Type: application/json
+
+{
+  "id": 11,
+  "firstname": "Alex",
+  "lastname": "Nika",
+  "address": "Calle Venus, Cambrils",
+  "job": "IT Expert/Administrator",
+  "hobby": "Off-road/travel and expeditions"
+}

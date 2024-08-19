@@ -1,0 +1,40 @@
+### PUT request to HTTP fake server. Update multiple fake items.
+// @no-log
+PUT {{url}}/fakeitems
+Accept: application/json
+Content-Type: application/json
+
+[
+  {
+    "id": 11,
+    "firstname": "Alex",
+    "lastname": "Nika",
+    "address": "Calle Venus, Cambrils",
+    "job": "IT Expert/Administrator",
+    "hobby": "Off-road/travel and expeditions"
+  },
+  {
+    "id": 1,
+    "firstname": "Lamar",
+    "lastname": "XXXXXX",
+    "address": "055 Stokes Walk",
+    "job": "Specialist",
+    "hobby": "Hooping"
+  },
+  {
+    "id": 2,
+    "firstname": "Joy",
+    "lastname": "YYYYYYY",
+    "address": "603 Tillman Center",
+    "job": "Associate",
+    "hobby": "Polo"
+  },
+  {
+    "id": 3,
+    "firstname": "Devon",
+    "lastname": "ZZZZZZZZ",
+    "address": "7606 Devora Hollow",
+    "job": "Analyst",
+    "hobby": "Magic"
+  }
+]

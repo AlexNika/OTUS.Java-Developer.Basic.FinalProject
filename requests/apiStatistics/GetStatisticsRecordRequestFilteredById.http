@@ -1,0 +1,5 @@
+### GET request to HTTP faker server (statistics). Statistics will be filtered by id.
+// @no-log
+GET {{uri}}/statistics?id=55
+Accept: application/json
+Content-Type: application/json

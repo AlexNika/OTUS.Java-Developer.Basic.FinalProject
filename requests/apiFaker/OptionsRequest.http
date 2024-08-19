@@ -1,0 +1,2 @@
+### OPTION request to HTTP faker server. This request is intended to send a list of methods supported by the server.
+OPTIONS {{url}}

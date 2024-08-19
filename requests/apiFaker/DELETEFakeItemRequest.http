@@ -1,0 +1,3 @@
+### DELETE request to HTTP fake server. Delete one fake item with id=11.
+// @no-log
+DELETE {{url}}/fakeitems?id=1

@@ -1,0 +1,5 @@
+### GET request to HTTP faker server. First 5 (if avalable) fake items is provided upon request.
+// @no-log
+GET {{url}}/fakeitems?quantity=5
+Accept: application/json
+Content-Type: application/json

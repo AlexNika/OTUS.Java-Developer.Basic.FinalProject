@@ -7,13 +7,9 @@
         <Console name="STDOUT" target="SYSTEM_OUT">
             <PatternLayout pattern="%-5p %d{yyyy-MM-dd HH:mm:ss} [%t] %C (%F:%L) - %m%n"/>
         </Console>
-<!--        <File name="FILE" fileName="${basePath}/log.log" append="true">-->
-<!--            <PatternLayout pattern="%-5p %d{yyyy-MM-dd HH:mm:ss} [%t] %C (%F:%L) - %m%n"/>-->
-<!--        </File>-->
         <RollingFile name="RollingFILE" fileName="${basePath}/faker_server.log"
                      filePattern="${basePath}/$${date:yyyy-MM}/faker_server-%d{yyyy-MM-dd-HH}-%i.log">
             <PatternLayout>
-<!--                <Pattern>%d %p %c{1.} [%t] %m%n</Pattern>-->
                 <Pattern>%-5p %d{yyyy-MM-dd HH:mm:ss} [%t] %C (%F:%L) - %m%n</Pattern>
             </PatternLayout>
             <Policies>
@@ -24,7 +20,7 @@
         </RollingFile>
     </Appenders>
     <Loggers>
-        <Root level="debug">
+        <Root level="info">
             <AppenderRef ref="STDOUT"/>
             <AppenderRef ref="RollingFILE"/>
         </Root>

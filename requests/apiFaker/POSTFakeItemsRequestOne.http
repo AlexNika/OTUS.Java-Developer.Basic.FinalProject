@@ -1,0 +1,16 @@
+### POST request to HTTP fake server. Create one fake item with id=11.
+### If id=11 is already occupied, fake item will be created with the next empty id in order
+### id may not be set in json request body. In such case fake item will also be created with the next empty id in order.
+// @no-log
+POST {{url}}/fakeitems
+Accept: application/json
+Content-Type: application/json
+
+{
+  "id": 11,
+  "firstname": "Alexander",
+  "lastname": "Nikolaev",
+  "address": "Calle Venus, Cambrils",
+  "job": "IT Expert/Administrator",
+  "hobby": "Off-road"
+}

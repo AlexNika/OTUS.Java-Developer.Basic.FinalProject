@@ -1,3 +1,0 @@
-GET {{uri}}/
-Accept: text/html
-Content-Type: text/html

@@ -1,0 +1,5 @@
+### GET request to HTTP faker server. An initial amount of fake data is provided upon request.
+// @no-log
+GET {{url}}/fakeitems
+Accept: application/json
+Content-Type: application/json
