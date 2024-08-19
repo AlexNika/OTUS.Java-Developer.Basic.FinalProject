@@ -28,7 +28,7 @@ public class DeleteAllStatisticsProcessor extends Processor {
         if (result >= 0) {
             httpresponse = HttpResponse.ok(acceptType);
         } else {
-            httpresponse = HttpResponse.error404(acceptType);
+            httpresponse = HttpResponse.noContent(acceptType);
         }
         response = templateRequest.prepareResponse(httpresponse);
         send(out, response);

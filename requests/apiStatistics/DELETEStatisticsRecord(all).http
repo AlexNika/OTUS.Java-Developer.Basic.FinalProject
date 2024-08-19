@@ -1,0 +1,3 @@
+### DELETE request to HTTP fake server. Delete all statistics records in database.
+// @no-log
+DELETE {{url}}/statistics

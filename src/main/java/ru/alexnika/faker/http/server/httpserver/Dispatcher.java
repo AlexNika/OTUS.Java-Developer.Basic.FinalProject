@@ -20,7 +20,7 @@ import com.google.gson.Gson;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-@SuppressWarnings({"FieldMayBeFinal", "FieldCanBeLocal", "CallToPrintStackTrace"})
+@SuppressWarnings({"FieldMayBeFinal", "FieldCanBeLocal"})
 public class Dispatcher {
     private static final Logger logger = LogManager.getLogger(Dispatcher.class.getName());
     private Map<String, RequestProcessor> processors;
@@ -58,7 +58,7 @@ public class Dispatcher {
             }
             processors.get(request.getRoutingKey()).execute(request, out);
         } catch (BadRequestException e) {
-            e.printStackTrace();
+            logger.error("Error occurs while processor execute", e);
             DefaultErrorDto defaultErrorDto = new DefaultErrorDto("CLIENT_DEFAULT_ERROR", e.getMessage());
             String responseError = new Gson().toJson(defaultErrorDto);
             HttpAccept acceptType = request.getAcceptType();
