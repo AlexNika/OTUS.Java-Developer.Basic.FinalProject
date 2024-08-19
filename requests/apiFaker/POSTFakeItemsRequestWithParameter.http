@@ -1,0 +1,5 @@
+### POST request to HTTP fake server. Create multiple fake items by parameter provided in uri.
+// @no-log
+POST {{url}}/fakeitems?quantity=100
+Accept: application/json
+Content-Type: application/json

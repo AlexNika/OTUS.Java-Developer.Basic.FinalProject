@@ -1,0 +1,10 @@
+### PUT request to HTTP fake server (statistics). Update one statistis record with id=1.
+// @no-log
+PUT {{uri}}/statistics
+Accept: application/json
+Content-Type: application/json
+
+{
+  "id": 1,
+  "billed": true
+}

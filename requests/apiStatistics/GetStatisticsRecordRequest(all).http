@@ -1,0 +1,5 @@
+### GET request to HTTP faker server (statistics).
+// @no-log
+GET {{uri}}/statistics
+Accept: application/json
+Content-Type: application/json

@@ -1,0 +1,29 @@
+### POST request to HTTP fake server. Create multiple fake items.
+// @no-log
+POST {{url}}/fakeitems
+Accept: application/json
+Content-Type: application/json
+
+[
+  {
+    "firstname": "Alexander",
+    "lastname": "Nikolaev",
+    "address": "Calle Venus, Cambrils",
+    "job": "IT Expert/Administrator",
+    "hobby": "Off-road"
+  },
+  {
+    "firstname": "Owen",
+    "lastname": "Windler",
+    "address": "691 Cremin Wells",
+    "job": "Architect",
+    "hobby": "Roller skating"
+  },
+  {
+    "firstname": "Gabriel",
+    "lastname": "Swaniawski",
+    "address": "387 Kub Plaza",
+    "job": "Developer",
+    "hobby": "Coloring"
+  }
+]

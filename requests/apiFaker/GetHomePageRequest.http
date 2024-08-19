@@ -1,0 +1,5 @@
+### GET request to HTTP faker server. Read index.html file and return it in the response body.
+// @no-log
+GET {{url}}/
+Accept: text/html
+Content-Type: text/html
